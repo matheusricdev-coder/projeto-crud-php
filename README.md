@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Coffee API
 
 RESTful API built with pure PHP following Clean Architecture principles.
@@ -122,3 +123,6 @@ src/
 ├── Domain/              # Entities and interfaces
 └── Infrastructure/      # Controllers and repositories
 ```
+=======
+# projeto-crud-php
+>>>>>>> abad7dbbceb56dd412d72be56884be142dd380ee
