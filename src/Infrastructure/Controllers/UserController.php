@@ -118,10 +118,11 @@ class UserController extends BaseController
         try {
             $userId = (int) $this->pathParams['iduser'];
             $authenticatedUserId = $this->pathParams['authenticated_user_id'] ?? 0;
-
+            
             $this->deleteUserUseCase->execute($userId, $authenticatedUserId);
-
-            $this->sendSuccessResponse([], 'User deleted successfully');
+            
+            http_response_code(204);
+            exit;
         } catch (NotFoundException $e) {
             $this->sendErrorResponse($e->getMessage(), $e->getCode());
         } catch (ForbiddenException $e) {

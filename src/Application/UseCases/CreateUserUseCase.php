@@ -25,7 +25,7 @@ class CreateUserUseCase
 
         // Check if user already exists
         if ($this->userRepository->existsByEmail($email)) {
-            throw new ValidationException('User with this email already exists');
+            throw new ValidationException('User with this email already exists', 409);
         }
 
         // Validate email format

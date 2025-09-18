@@ -27,12 +27,8 @@ class LoginUseCase
 
         $user = $this->userRepository->findByEmail($email);
 
-        if (!$user) {
-            throw new AuthenticationException('User not found');
-        }
-
-        if (!$user->verifyPassword($password)) {
-            throw new AuthenticationException('Invalid password');
+        if (!$user || !$user->verifyPassword($password)) {
+            throw new AuthenticationException('Invalid email or password');
         }
 
         $token = $this->jwtService->generateToken($user->getId(), $user->getEmail());

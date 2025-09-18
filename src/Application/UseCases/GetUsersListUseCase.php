@@ -15,6 +15,15 @@ class GetUsersListUseCase
 
     public function execute(int $page = 1, int $limit = 10): array
     {
+        // Validate pagination parameters
+        if ($page < 1) {
+            throw new \App\Application\Exceptions\ValidationException('Page must be greater than 0');
+        }
+        
+        if ($limit < 1 || $limit > 100) {
+            throw new \App\Application\Exceptions\ValidationException('Limit must be between 1 and 100');
+        }
+
         $users = $this->userRepository->findAll($page, $limit);
         $totalCount = $this->userRepository->getTotalCount();
 
@@ -23,7 +32,7 @@ class GetUsersListUseCase
         }, $users);
 
         return [
-            'users' => $usersData,
+            'data' => $usersData,
             'pagination' => [
                 'page' => $page,
                 'limit' => $limit,

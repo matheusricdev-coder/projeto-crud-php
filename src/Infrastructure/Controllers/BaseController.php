@@ -8,7 +8,7 @@ abstract class BaseController
     {
         http_response_code($statusCode);
         header('Content-Type: application/json');
-        echo json_encode($data);
+        echo json_encode($data, JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -44,6 +44,10 @@ abstract class BaseController
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             $this->sendErrorResponse('Invalid JSON format', 400);
+        }
+
+        if (!is_array($data)) {
+            $this->sendErrorResponse('Invalid JSON body', 400);
         }
 
         return $data ?? [];

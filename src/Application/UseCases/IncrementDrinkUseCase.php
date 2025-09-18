@@ -28,15 +28,24 @@ class IncrementDrinkUseCase
             throw new NotFoundException('User not found');
         }
 
-        // Create a new drink record
-        $drink = new Drink($userId);
-        $this->drinkRepository->create($drink);
+        \App\Infrastructure\Database\Database::beginTransaction();
+        
+        try {
+            // Create a new drink record
+            $drink = new Drink($userId);
+            $this->drinkRepository->create($drink);
 
-        // Increment user's drink counter
-        $user->incrementDrinkCounter();
-        $this->userRepository->update($user);
+            // Increment user's drink counter
+            $user->incrementDrinkCounter();
+            $this->userRepository->update($user);
 
-        return $user->toArrayWithoutPassword();
+            \App\Infrastructure\Database\Database::commit();
+            
+            return $user->toArrayWithoutPassword();
+        } catch (\Exception $e) {
+            \App\Infrastructure\Database\Database::rollback();
+            throw $e;
+        }
     }
 }
 

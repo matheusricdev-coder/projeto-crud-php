@@ -17,7 +17,8 @@ class JWTService
         $payload = json_encode([
             'user_id' => $userId,
             'email' => $email,
-            'exp' => time() + (24 * 60 * 60) // 24 hours
+            'iat' => time(),
+            'exp' => time() + (60 * 60) // 1 hour
         ]);
 
         $base64Header = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
