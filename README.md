@@ -204,6 +204,81 @@ Increment coffee counter (requires authentication).
 - **Authorization**: Users can only modify their own accounts
 - **CORS**: Configured for cross-origin requests
 
+## Optional Features
+
+### Daily Drink History
+
+#### GET /users/:iduser/drinks/daily
+Get user's daily coffee consumption history.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Query Parameters:**
+- `from` (optional): Start date (YYYY-MM-DD)
+- `to` (optional): End date (YYYY-MM-DD)
+
+**Response (200):**
+```json
+{
+    "success": true,
+    "message": "Daily drinks history retrieved successfully",
+    "data": {
+        "user_id": 1,
+        "history": [
+            {
+                "day": "2023-09-18",
+                "total_drinks": 3
+            },
+            {
+                "day": "2023-09-17",
+                "total_drinks": 2
+            }
+        ]
+    }
+}
+```
+
+### Coffee Rankings
+
+#### GET /drinks/ranking
+Get ranking of users by coffee consumption.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Query Parameters:**
+- `date` (optional): Specific date for ranking (YYYY-MM-DD)
+- `days` (optional): Number of past days to include (1-365)
+- `limit` (optional): Maximum number of users to return (default: 10)
+
+**Response (200):**
+```json
+{
+    "success": true,
+    "message": "Drink ranking retrieved successfully",
+    "data": {
+        "ranking": [
+            {
+                "user_id": 1,
+                "name": "John Doe",
+                "email": "john@example.com",
+                "total_drinks": 8
+            },
+            {
+                "user_id": 2,
+                "name": "Jane Smith",
+                "email": "jane@example.com",
+                "total_drinks": 5
+            }
+        ],
+        "parameters": {
+            "date": "2023-09-18",
+            "days": null,
+            "limit": 10
+        }
+    }
+}
+```
+
 ## Architecture
 
 The project follows Clean Architecture:

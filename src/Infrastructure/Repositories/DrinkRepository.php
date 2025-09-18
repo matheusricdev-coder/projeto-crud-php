@@ -86,47 +86,71 @@ class DrinkRepository implements DrinkRepositoryInterface
         return (int) $stmt->fetchColumn();
     }
 
-    public function getDailyRanking(\DateTime $date): array
-    {
-        $startDate = $date->format('Y-m-d 00:00:00');
-        $endDate = $date->format('Y-m-d 23:59:59');
-
-        $sql = "SELECT u.id as user_id, u.name, u.email,
-                       COALESCE(SUM(d.quantity), 0) as total_drinks
-                FROM users u
-                LEFT JOIN drinks d ON u.id = d.user_id
-                    AND d.consumed_at BETWEEN :start_date AND :end_date
-                GROUP BY u.id, u.name, u.email
-                ORDER BY total_drinks DESC, u.name ASC";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            ':start_date' => $startDate,
-            ':end_date' => $endDate
-        ]);
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function getPeriodRanking(\DateTime $startDate, \DateTime $endDate): array
+    public function getUserDailyConsumption(int $userId, \DateTime $startDate, \DateTime $endDate): array
     {
         $startDateStr = $startDate->format('Y-m-d 00:00:00');
         $endDateStr = $endDate->format('Y-m-d 23:59:59');
-
-        $sql = "SELECT u.id as user_id, u.name, u.email,
-                       COALESCE(SUM(d.quantity), 0) as total_drinks
-                FROM users u
-                LEFT JOIN drinks d ON u.id = d.user_id
-                    AND d.consumed_at BETWEEN :start_date AND :end_date
-                GROUP BY u.id, u.name, u.email
-                ORDER BY total_drinks DESC, u.name ASC";
-
+        
+        $sql = "SELECT DATE(consumed_at) as day, SUM(quantity) as total_drinks
+                FROM drinks
+                WHERE user_id = :user_id
+                AND consumed_at BETWEEN :start_date AND :end_date
+                GROUP BY DATE(consumed_at)
+                ORDER BY day DESC";
+        
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
+            ':user_id' => $userId,
             ':start_date' => $startDateStr,
             ':end_date' => $endDateStr
         ]);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
+    public function getDailyRanking(\DateTime $date, int $limit = 10): array
+    {
+        $startDate = $date->format('Y-m-d 00:00:00');
+        $endDate = $date->format('Y-m-d 23:59:59');
+        
+        $sql = "SELECT u.id as user_id, u.name, u.email, 
+                       COALESCE(SUM(d.quantity), 0) as total_drinks
+                FROM users u
+                LEFT JOIN drinks d ON u.id = d.user_id 
+                    AND d.consumed_at BETWEEN :start_date AND :end_date
+                GROUP BY u.id, u.name, u.email
+                ORDER BY total_drinks DESC, u.name ASC
+                LIMIT :limit";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':start_date', $startDate, PDO::PARAM_STR);
+        $stmt->bindValue(':end_date', $endDate, PDO::PARAM_STR);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getPeriodRanking(\DateTime $startDate, \DateTime $endDate, int $limit = 10): array
+    {
+        $startDateStr = $startDate->format('Y-m-d 00:00:00');
+        $endDateStr = $endDate->format('Y-m-d 23:59:59');
+        
+        $sql = "SELECT u.id as user_id, u.name, u.email, 
+                       COALESCE(SUM(d.quantity), 0) as total_drinks
+                FROM users u
+                LEFT JOIN drinks d ON u.id = d.user_id 
+                    AND d.consumed_at BETWEEN :start_date AND :end_date
+                GROUP BY u.id, u.name, u.email
+                ORDER BY total_drinks DESC, u.name ASC
+                LIMIT :limit";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':start_date', $startDateStr, PDO::PARAM_STR);
+        $stmt->bindValue(':end_date', $endDateStr, PDO::PARAM_STR);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

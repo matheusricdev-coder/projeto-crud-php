@@ -20,13 +20,20 @@ class Router
 
     private function setupRoutes(): void
     {
+        // Public routes
         $this->addRoute('POST', '/users/', [UserController::class, 'create']);
         $this->addRoute('POST', '/login', [AuthController::class, 'login']);
+        
+        // User routes (authenticated)
         $this->addRoute('GET', '/users/', [UserController::class, 'getAll'], true);
         $this->addRoute('GET', '/users/:iduser', [UserController::class, 'getById'], true);
         $this->addRoute('PUT', '/users/:iduser', [UserController::class, 'update'], true);
         $this->addRoute('DELETE', '/users/:iduser', [UserController::class, 'delete'], true);
         $this->addRoute('POST', '/users/:iduser/drink', [UserController::class, 'incrementDrink'], true);
+        
+        // Optional features (authenticated)
+        $this->addRoute('GET', '/users/:iduser/drinks/daily', ['App\\Infrastructure\\Controllers\\DrinkController', 'getUserDailyDrinks'], true);
+        $this->addRoute('GET', '/drinks/ranking', ['App\\Infrastructure\\Controllers\\DrinkController', 'getRanking'], true);
     }
 
     public function addRoute(string $method, string $path, array $handler, bool $requiresAuth = false): void
@@ -41,10 +48,25 @@ class Router
 
     public function handleRequest(): void
     {
-        $method = $_SERVER['REQUEST_METHOD'];
-        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $method = $this->getRequestMethod();
+        $path = $this->getRequestPath();
 
-        $path = rtrim($path, '/');
+        // Handle OPTIONS requests for CORS
+        if ($method === 'OPTIONS') {
+            http_response_code(200);
+            header('Access-Control-Allow-Origin: *');
+            header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+            header('Access-Control-Allow-Headers: Content-Type, Authorization');
+            exit;
+        }
+
+        // Set CORS headers for all responses
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Content-Type, Authorization');
+        
+        // Normalize path
+        $path = $this->normalizePath($path);
 
         foreach ($this->routes as $route) {
             if ($route['method'] === $method && $this->matchPath($route['path'], $path)) {
@@ -54,13 +76,7 @@ class Router
                     try {
                         $pathParams = $this->authMiddleware->handle($pathParams);
                     } catch (\Exception $e) {
-                        http_response_code($e->getCode());
-                        header('Content-Type: application/json');
-                        echo json_encode([
-                            'error' => true,
-                            'message' => $e->getMessage()
-                        ]);
-                        exit;
+                        $this->sendJsonError($e->getMessage(), $e->getCode() ?: 401);
                     }
                 }
 
@@ -69,12 +85,34 @@ class Router
             }
         }
 
-        http_response_code(404);
+        $this->sendJsonError('Route not found', 404);
+    }
+    
+    private function getRequestMethod(): string
+    {
+        return $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    }
+    
+    private function getRequestPath(): string
+    {
+        return parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    }
+    
+    private function normalizePath(string $path): string
+    {
+        // Remove trailing slash except for root path
+        return $path === '/' ? '/' : rtrim($path, '/');
+    }
+    
+    private function sendJsonError(string $message, int $statusCode): void
+    {
+        http_response_code($statusCode);
         header('Content-Type: application/json');
         echo json_encode([
             'error' => true,
-            'message' => 'Route not found'
-        ]);
+            'message' => $message
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
     }
 
     private function matchPath(string $routePath, string $requestPath): bool
@@ -126,8 +164,28 @@ class Router
         if ($controllerClass === AuthController::class) {
             return $this->createAuthController();
         }
+        
+        if ($controllerClass === 'App\\Infrastructure\\Controllers\\DrinkController') {
+            return $this->createDrinkController();
+        }
 
         throw new \Exception("Unknown controller: {$controllerClass}");
+    }
+    
+    private function createDrinkController(): \App\Infrastructure\Controllers\DrinkController
+    {
+        $userRepository = new \App\Infrastructure\Repositories\UserRepository();
+        $drinkRepository = new \App\Infrastructure\Repositories\DrinkRepository();
+        
+        return new \App\Infrastructure\Controllers\DrinkController(
+            new \App\Application\UseCases\GetUserDailyDrinksUseCase(
+                $drinkRepository,
+                $userRepository
+            ),
+            new \App\Application\UseCases\GetDrinkRankingUseCase(
+                $drinkRepository
+            )
+        );
     }
 
     private function createUserController(): UserController
