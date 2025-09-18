@@ -1,0 +1,58 @@
+
+---
+alwaysApply: true
+name: "Project Rules – Coffee API (PHP Test)"
+description: "Rules of the Back End PHP challenge (Mosyle) converted into Project Rules format for Cursor."
+
+rules:
+  - title: Stack & Restrictions
+    details:
+      - The project must be implemented in **pure PHP**.
+      - Use a **relational database**.
+      - **Do not use frameworks or external libraries** (e.g., Laravel, Slim, Doctrine).
+      - All input and output must be in **JSON** format.
+      - The API must follow the **REST standard**.
+      - Code must follow **Object-Oriented Programming (OOP)** principles.
+      - Plagiarized/copied code will be disregarded.
+
+  - title: Required Endpoints
+    details:
+      - `POST /users/`
+        - Creates a new user.
+        - Required fields: `email`, `name`, `password`.
+        - Validation: return an error if the user already exists.
+      - `POST /login`
+        - Authenticates a user.
+        - Required fields: `email`, `password`.
+        - Returns: `token`, `iduser`, `name`, `drinkCounter`.
+        - Validation: return error if user does not exist or password is invalid.
+      - `GET /users/:iduser`
+        - Returns user data (`iduser`, `email`, `name`, `drinkCounter`).
+        - Requires authentication via `token`.
+      - `GET /users/`
+        - Returns list of users.
+        - Requires authentication via `token`.
+      - `PUT /users/:iduser`
+        - Edits the authenticated user.
+        - Editable fields: `email`, `name`, `password`.
+        - Must enforce: only the authenticated user can edit themselves.
+      - `DELETE /users/:iduser`
+        - Deletes the authenticated user.
+        - Must enforce: only the authenticated user can delete themselves.
+      - `POST /users/:iduser/drink`
+        - Increments the user’s coffee counter (`drinkCounter`).
+        - Requires `token`.
+
+  - title: Mandatory Validations
+    details:
+      - Do not allow duplicate users at creation.
+      - Return clear messages for invalid login attempts.
+      - Edit and delete operations must only be allowed if the authenticated user matches `iduser`.
+
+  - title: Optional Features
+    details:
+      - Pagination in the user list.
+      - Service to return a user’s daily coffee consumption history (date + quantity).
+      - Service to return ranking of the user who drank the most coffee on a specific day.
+      - Service to return ranking of users who drank the most coffee in the last X days.
+---
